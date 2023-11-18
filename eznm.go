@@ -23,13 +23,13 @@ const (
 // String returns a the flag corresponding to the scan type
 func (s scanType) String() string {
 	return [...]string{
-		"sS",
-		"sT",
-		"sA",
-		"sW",
-		"sM",
-		"sU",
-		"sN",
+		"-sS",
+		"-sT",
+		"-sA",
+		"-sW",
+		"-sM",
+		"-sU",
+		"-sN",
 	}[s]
 }
 
@@ -83,6 +83,8 @@ type model struct {
 	openPortsOnly bool
 	resume string // not completely sure about this one, maybe have it autodetect
 	outputFile string
+	// general returning error
+	err error
 }
 
 func (m model) Init() tea.Cmd {
