@@ -3,6 +3,7 @@
   packages = [
     pkgs.go
     pkgs.gopls
+    pkgs.go-tools
   ];
   idx.extensions = [
     "golang.Go"
