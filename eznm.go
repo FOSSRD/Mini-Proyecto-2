@@ -3,9 +3,28 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/charmbracelet/bubbles/cursor"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
+
+var (
+	focusedStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("30"))
+	blurredStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	cursorStyle         = focusedStyle.Copy()
+	noStyle             = lipgloss.NewStyle()
+	helpStyle           = blurredStyle.Copy()
+	//delete next line
+	//cursorModeHelpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
+	helpMenuColor = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
+
+	focusedSubmitButton = focusedStyle.Copy().Render("[ Submit ]")
+	blurredSubmitButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
+)
+
 
 // scanType is the type of scan to perform in nmap
 type scanType int
@@ -57,34 +76,34 @@ type model struct {
 	// The control part for the usage of the menu
 	cursor int
 	// page 1
-	hostnames  string
-	eHostnames string
-	ports      string
-	ePorts     string
+	hostnames  textinput.Model
+	eHostnames textinput.Model
+	ports      textinput.Model
+	ePorts     textinput.Model
 	fastmode   bool
-	// page 2
+	// page 2  4
 	listScan      bool
 	pingScan      bool
 	traceroute    bool
 	skipDiscovery bool
-	// page 3
+	// page 3  8
 	scanTechnique scanType
-	// page 4
+	// page 4  9
 	versionDetection bool
 	versionIntensity int
-	// page 5
+	// page 5  11
 	osDetection bool
 	osScanLimit bool
 	osScanGuess bool
-	// page 6
+	// page 6  14
 	outputFormat        Format
 	verbosityLevel      int
 	debugLevel          int
 	showReasonPortState bool
 	openPortsOnly       bool
-	resume              string // not completely sure about this one, maybe have it autodetect
-	outputFile          string
-	// general returning error
+	resume              textinput.Model // not completely sure about this one, maybe have it autodetect
+	outputFile          textinput.Model
+	// general returning error  21
 	err error
 }
 
@@ -93,92 +112,73 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "q":
-			return m, tea.Quit
-			// These keys should exit the program.
-		case "ctrl+c", "q":
-			return m, tea.Quit
 
-		// The "up" and "k" keys move the cursor up
-		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
-			}
-
-		// The "down" and "j" keys move the cursor down
-		case "down", "j":
-			if m.cursor < len(m.choices)-1 {
-				m.cursor++
-			}
-
-		// The "enter" key and the spacebar (a literal space) toggle
-		// the selected state for the item that the cursor is pointing at.
-		case "enter", " ":
-			_, ok := m.selected[m.cursor]
-			if ok {
-				delete(m.selected, m.cursor)
-			} else {
-				m.selected[m.cursor] = struct{}{}
-			}
-		}
-	}
-
-	return m, nil
 }
 
+
 func (m model) View() string {
-	if m.err != nil {
-		return m.err.Error()
-	}
-	
-	return "Hello, world!"
+
 }
 
 func initialModel() model {
-	return model{
-		cursor: 0,
-		// page 1
-		hostnames:  "",
-		eHostnames: "",
-		ports:      "",
-		ePorts:     "",
-		fastmode:   true,
-		// page 2
-		listScan:      false,
-		pingScan:      false,
-		traceroute:    false,
-		skipDiscovery: false,
+	var m model
+	t := textinput.New()
+	t.Cursor.Style = cursorStyle
+	t.CharLimit = 64
+	
+
+	m.hostnames := t
+	m.hostnames.Focus()
+	m.hostnames.PromptStyle = focusedStyle
+	m.hostnames.TextStyle = focusedStyle
+	m.hostnames.Placeholder = "Hostnames to scan"
+
+	m.eHostnames := t
+	m.eHostnames.Placeholder = "Hostnames to exclude"
+
+	m.ports := t
+	m.ports.Placeholder = "Ports to scan"
+
+	m.ePorts := t
+	m.ePorts.Placeholder = "Ports to exclude"
+
+	m.fastmode = true
+	m.listScan = false
+	m.pingScan = false
+	m.traceroute = false
+	m.skipDiscovery = false
 		// page 3
-		scanTechnique: tcpSyn,
+	m.scanTechnique = tcpSyn
 		// page 4
-		versionDetection: true,
-		versionIntensity: 3,
+	m.versionDetection = true
+	m.versionIntensity  = 3,
 		// page 5
-		osDetection: false,
-		osScanLimit: false,
-		osScanGuess: false,
+	m.osDetection = false
+	m.osScanLimit = false
+	m.osScanGuess = false
 		// page 6
-		outputFormat:        normal,
-		verbosityLevel:      0,
-		debugLevel:          0,
-		showReasonPortState: false,
-		openPortsOnly:       false,
-		resume:              "", // not completely sure about this one, maybe have it autodetect
-		outputFile:          "",
-		// general returning error
-		err: nil,
-	}
+	m.outputFormat = normal
+	m.verbosityLevel = 0
+	m.debugLevel = 0
+	m.showReasonPortState = false
+	m.openPortsOnly = false
+	m.outputFile := t
+	m.outputFile.Placeholder = "File to save the output"
+	m.err = nil
+
+
+
+	return m
 }
 
 func main() {
 	p := tea.NewProgram(initialModel())
-	if _, err := p.Run(); err != nil {
+	values, err := p.Run()
+	if err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)
 	}
+	fmt.Println(values)
 }
 
 //Nmap 7.94 ( https://nmap.org )

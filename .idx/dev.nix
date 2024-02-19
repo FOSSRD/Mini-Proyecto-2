@@ -1,5 +1,6 @@
 {pkgs}: {
   #channel = "stable-23.05"; # "stable-23.05" or "unstable"
+  channel = "unstable";
   packages = [
     pkgs.go
     pkgs.gopls
