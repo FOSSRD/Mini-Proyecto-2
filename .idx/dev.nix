@@ -11,6 +11,7 @@
     "pinage404.bash-extension-pack"
     "premparihar.gotestexplorer"
     "jeff-hykim.better-go-syntax"
+    "vscodevim.vim"
     ];
   #idx.previews = {
    # enable = true;
